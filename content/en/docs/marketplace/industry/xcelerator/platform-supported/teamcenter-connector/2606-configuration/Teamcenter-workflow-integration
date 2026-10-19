@@ -1,0 +1,128 @@
+# Teamcenter Workflow Integration
+
+## Introduction
+
+Workflows in enterprise systems are often siloed, making it difficult to build integrated business processes. Mendix applications can act as a workflow orchestration layer, coordinating work across multiple systems programmatically.
+
+The TcConnector enables Mendix to interact with Teamcenter workflows, allowing developers to:
+
+- Submit objects to workflows and monitor their progress
+- Execute task actions (approve, reject, complete, etc.) based on business logic
+- Manage task assignments and reviewers programmatically
+- Query workflow data and integrate it with other systems
+
+This makes it possible to treat Teamcenter workflows as one component in broader, cross-system business processes.
+
+### Action Categories by Object Type
+
+**`EPMTask` Actions:** Abort, Assign Reviewer, Add Additional Reviewer, Complete, Complete with Custom Outcome, Suspend, Resume, Reassign
+
+**`Signoff` Actions:** Claim, Approve, Reject, Replace Reviewer
+
+**`ItemRevision` Actions:** Submit Item Revision
+
+**Query Actions:** Retrieve Workflow Tasks to Perform for Inbox, Retrieve Workflow Tasks to Track for Inbox, Get User Inbox, Get Signoff Profiles, Get Workflow Template, Get Workflow Template Assigned, Get All Workflow Templates
+
+**Note:** All workflow actions require a `ConfigurationName` parameter to specify the Teamcenter connection configuration.
+
+## Workflow Actions
+
+### Retrieve Workflow Tasks to Perform for Inbox
+
+Retrieves all workflow tasks assigned to the current logged-in Teamcenter user. Provide a `TaskInbox` object and the action will populate it with the user's assigned tasks, returning a list of `EPMTask` objects that represent the user's to-do list.
+
+### Retrieve Workflow Tasks to Track for Inbox
+
+Retrieves all workflow tasks tracked by the current logged-in Teamcenter user. These are tasks the user has already reviewed or is monitoring. Provide a `TaskInbox` object and the action will populate it with tracked tasks, returning a list of `EPMTask` objects.
+
+### Replace Reviewer Action
+
+Changes an existing reviewer in a sign-off workflow when you need to substitute one reviewer for another. Provide the `Signoff` to replace and specify a new reviewer (either a `GroupMember` or `ResourcePool`). The action updates the `Signoff`'s `group_member` or `resource_pool` association with the new reviewer, leaving the workflow structure intact while changing who performs the review.
+
+### Get Signoff Profiles
+
+Retrieves signoff profiles required for an `EPMSelectSignoffTask`. Signoff profiles determine which users can sign off based on group and role, how many signoffs are required, and if subgroups are allowed. Provide an `EPMTask` (must be an `EPMSelectSignoffTask`) and the action returns a list of `EPMSignoffProfile` objects. This action throws an error if the provided task is not an `EPMSelectSignoffTask`.
+
+### Submit Item Revision Action
+
+Initiates a workflow on a specific `ItemRevision`. Provide the revision to submit, the workflow template name (use `EPMTaskTemplate.task_template` attribute), a name and description for the workflow process, and optionally a list of additional `ModelObject`s to attach as references. The action creates a new workflow process with tasks assigned according to the template, returning the root `EPMTask` of the initiated workflow.
+
+### Abort Action
+
+Cancels an entire workflow process when it's no longer needed. Provide the `EPMTask` to abort and optionally a comment explaining the reason. The task's `fnd0Status` becomes "Aborted" and the workflow terminates. This action cannot be undone, so use it only when you're certain the workflow should be cancelled.
+
+### Add Additional Reviewer Action
+
+Adds more reviewers to an existing sign-off task that already has reviewers assigned. Provide the `EPMSelectSignoffTask`, the reviewer to add (either a `GroupMember` or `ResourcePool`), an `EPMSignoffProfile` that determines signoff requirements, and a `SignoffRequired` value (`Optional`, `Required Modifiable`, or `Required Unmodifiable`). The action creates a new `Signoff` and links it to the `EPMTask` via the `Fnd0EPMSignoff` relation. This action throws an error if the provided task is not an `EPMSelectSignoffTask`.
+
+**SignoffRequired values:**
+
+- `Optional`: Signoff decision not required if quorum is met; can be changed to "Required Modifiable"
+- `Required Modifiable`: Signoff decision required even if quorum is met; can be changed back to "Optional"
+- `Required Unmodifiable`: Signoff decision required even if quorum is met; cannot be changed
+
+### Assign Reviewer Action
+
+Adds reviewers to an `EPMSelectSignoffTask` for approval workflows where specific users or groups need to review work items. Provide the task, the reviewer to assign (either a `GroupMember` or `ResourcePool`), an `EPMSignoffProfile` that determines signoff requirements, and a `SignoffRequired` value. The action creates a new `Signoff` and links it to the `EPMTask` via the `Fnd0EPMSignoff` relation. The reviewer must adhere to the `EPMSignoffProfile` rules. This action throws an error if the provided task is not an `EPMSelectSignoffTask`.
+
+### Approve Action
+
+Records approval by a reviewer on an `EPMPerformSignoffTask`. Provide the task, the `Signoff` to approve, and optionally approval comments. When all required reviewers approve, the workflow advances. The `Signoff`'s `fnd0Status` becomes "Approved". This action can only be performed on `EPMPerformSignoffTask`s and must be performed by an assigned reviewer. Use the `EPMTask_GetUserActionableSignoffs` helper microflow to get available signoffs for the current user.
+
+### Claim Action
+
+Takes personal ownership of a task assigned to your resource pool (team), converting a team-level assignment to a personal assignment. Provide the `EPMTask` to claim and the `Signoff` to claim. The `resource_pool` relation on the `Signoff` is cleared and `group_member` is set to a `GroupMember` linked to the current user. This is typically used when a task is assigned to a `ResourcePool` and an individual team member wants to take responsibility for it. Use the `EPMTask_GetUserActionableSignoffs` helper microflow to get available signoffs for the current user.
+
+### Complete Action
+
+Finishes a workflow task that doesn't require Approve/Reject decisions. Common for informational tasks or simple acknowledgments. Provide the `EPMTask` to complete and optionally completion notes. The task's `fnd0Status` becomes "Completed" and the workflow advances.
+
+### Complete with Custom Outcome Action
+
+Completes a task that has multiple predefined outcome options (e.g., "Approve", "Investigate", "Rework"). Provide the `EPMTask` to complete, a `TaskResult` decision outcome value, and optionally completion notes. The `TaskResult` determines which workflow path to follow next and must match one of the expected decision values defined in the workflow template. The task's `fnd0Status` becomes "Completed", `task_result` is set to the `TaskResult` value, and the workflow proceeds along the path corresponding to this decision. Valid `TaskResult` values are defined in the workflow template structure.
+
+### Get User Inbox
+
+Retrieves the `TaskInbox` for the current user. Returns a `TaskInbox` object but does not populate the associated `EPMTask`s. Use the Retrieve Workflow Tasks actions to populate tasks after obtaining the inbox.
+
+### Reassign Action
+
+Transfers task ownership to a different user or resource pool. Provide the `EPMTask` to reassign, the new owner (either a `User` or `ResourcePool`), and optionally a reason for reassignment. The `fnd0Assignee` relation is updated to the new owner. You can use both `fnd0Assignee` and `fnd0Assignee__1` if you want to add relations to both `User` and `ResourcePool`.
+
+### Reject Action
+
+Records rejection by a reviewer on an `EPMPerformSignoffTask`. Provide the task, the `Signoff` to reject, and optionally a reason for rejection. The workflow behavior (block, return to previous step, etc.) depends on the template configuration. The `Signoff`'s `fnd0Status` becomes "Rejected". This action can only be performed on `EPMPerformSignoffTask`s and must be performed by the assigned reviewer. Use the `EPMTask_GetUserActionableSignoffs` helper microflow to get available signoffs for the current user.
+
+### Resume Action
+
+Continues work on a previously suspended task. Provide the suspended `EPMTask` to resume and optionally a reason for resuming. The task state returns to "Started" and workflow progress can continue. This action returns an error if the task is not suspended. Note that Resume actions do not appear in Process History.
+
+### Suspend Action
+
+Temporarily pauses a workflow task. Useful when waiting on external dependencies or requiring additional information. Provide the `EPMTask` to suspend and optionally a reason for suspension. The task state becomes "Suspended" and no progress can be made until resumed. This action returns an error if the task is already suspended.
+
+### Get Workflow Template
+
+Retrieves a specific workflow template by name. Provide the workflow template name and the action returns the `EPMTaskTemplate` object with the specified name. This action throws an error if the template cannot be found.
+
+### Get Workflow Template Assigned
+
+Retrieves the workflow template assigned for a specific target object. Provide the `TargetModelObject` to get the assigned template for, and the action returns the `EPMTaskTemplate` assigned to that object.
+
+### Get All Workflow Templates
+
+Retrieves all available workflow templates, or templates applicable to a specific target object. By default, only returns templates with availability set to 'online'. Set `IncludeUnderConstruction` to true to include templates marked as 'under construction'. Optionally provide a `TargetModelObject` to filter results to only templates applicable to that object. Returns a list of `EPMTaskTemplate` objects - all templates when `TargetModelObject` is empty, or filtered templates when provided.
+
+## Usage Guidelines
+
+### Error Handling
+
+- Check ServiceResponse for partial errors after each action
+- Most actions return errors when prerequisites aren't met or when performed in invalid states
+
+### Best Practices
+
+1. Verify task type before calling type-specific actions (Approve/Reject require `EPMPerformSignoffTask`s)
+2. Check task state before state-dependent actions (e.g., don't Suspend an already-suspended task)
+3. Provide meaningful comments for audit trail
+4. Handle errors gracefully and provide user feedback
