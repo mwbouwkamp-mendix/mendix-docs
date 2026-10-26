@@ -60,9 +60,9 @@ Initiates a workflow on a specific `ItemRevision`. Provide the revision to submi
 
 Retrieves the `TaskInbox` for the current Teamcenter user. It does not populate the associated `EPMTask`s; use the Retrieve Workflow Tasks actions to populate tasks after obtaining the inbox.
 
-#### Task Inboxes Get for Current Teamcenter User
+#### Task Inboxes Get Subscribed for Current Teamcenter User
 
-Retrieves the subscribed inboxes of the current Teamcenter user. A subscribed inbox is not the same as a team inbox.
+Retrieves the list of inboxes the currently logged in Teamcenter user is subscribed to. A subscribed inbox is not the same as a team inbox.
 
 #### Retrieve Workflow Tasks to Perform for Inbox
 
@@ -74,7 +74,7 @@ Retrieves all workflow tasks tracked by the current logged-in Teamcenter user. T
 
 #### Workflow Process Get All Tasks
 
-Retrieves the tasks that belong to the specified `EPMJob`.
+Retrieves all tasks that belong to the specified `EPMJob`.
 
 #### Workflow Task Get Parent Process
 
@@ -82,33 +82,33 @@ Retrieves the workflow process (`EPMJob`) associated with an `EPMTask`. Provide 
 
 ### User Task Actions
 
-#### Wokflow Tasks Suspend Action
+#### Workflow Tasks Suspend Action
 
-Temporarily pauses a workflow task. Useful when waiting on external dependencies or requiring additional information. Provide the `EPMTask` to suspend and optionally a reason for suspension. The task state becomes "Suspended" and no progress can be made until resumed. This action returns an error if the task is already suspended.
+Temporarily pauses a workflow task. Useful when waiting on external dependencies or requiring additional information. Provide the `EPMTask` to suspend and optionally a reason for suspension. The task state becomes "Suspended" and no progress can be made until resumed. This action throws an error if the task is already suspended.
 
-#### Wokflow Tasks Resume Action
+#### Workflow Tasks Resume Action
 
-Continues work on a previously suspended task. Provide the suspended `EPMTask` to resume and optionally a reason for resuming. This action returns an error if the task is not suspended. Note that Resume actions do not appear in Process History.
+Continues work on a previously suspended task. Provide the suspended `EPMTask` to resume and optionally a reason for resuming. This action throws an error if the task is not suspended.
 
-#### Wokflow Tasks Complete Action
+#### Workflow Tasks Complete Action
 
 Finishes a workflow task that doesn't require Approve/Reject decisions. Common for informational tasks or simple acknowledgments. Provide the `EPMTask` to complete and optionally completion notes. The task's `fnd0Status` becomes "Completed" and the workflow advances.
 
-#### Wokflow Tasks Complete with Task Result
+#### Workflow Tasks Complete with Task Result
 
 Completes a task that has multiple predefined outcome options (e.g., "Approve", "Investigate", "Rework"). Provide the `EPMTask` to complete, a `TaskResult` decision outcome value, and optionally completion notes. The `TaskResult` determines which workflow path to follow next and must match one of the expected decision values defined in the workflow template. The task's `fnd0Status` becomes "Completed", `task_result` is set to the `TaskResult` value, and the workflow proceeds along the path corresponding to this decision. Valid `TaskResult` values are defined in the workflow template structure.
 
-#### Wokflow Tasks Abort Action
+#### Workflow Tasks Abort Action
 
 Cancels an entire workflow process when it's no longer needed. Provide the `EPMTask` to abort and a required comment explaining the reason. The task's `fnd0Status` becomes "Aborted" and the workflow terminates. This action cannot be undone, so use it only when you're certain the workflow should be cancelled.
 
 ### Ownership Actions
 
-#### Wokflow Tasks Reassign Action
+#### Workflow Tasks Reassign Action
 
 Transfers task ownership to a different user or resource pool. Provide the `EPMTask` to reassign, the new owner (either a `User` or `ResourcePool`), and optionally a reason for reassignment. The `fnd0Assignee` relation is updated to the new owner.
 
-#### Wokflow Tasks Claim Action
+#### Workflow Tasks Claim Action
 
 Claims a signoff assigned to a resource pool for the current user. Provide the EPMTask and Signoff to claim. The action clears the Signoff’s resource_pool relation and assigns it to the current user’s GroupMember. Use Get User Actionable Signoffs to retrieve signoffs the current user can claim.
 
@@ -136,15 +136,15 @@ Adds a reviewer to an `EPMSelectSignoffTask`. Provide the task, the reviewer to 
 
 Retrieves the signoffs the current user can act on for an `EPMTask`. Use the returned signoffs with Claim, Approve, or Reject as appropriate.
 
-#### Wokflow Tasks Approve
+#### Workflow Tasks Approve
 
 Records approval by a reviewer on an `EPMPerformSignoffTask`. Provide the task, the `Signoff` to approve, and optionally approval comments. When all required reviewers approve, the workflow advances. The `Signoff`'s `fnd0Status` becomes "Approved". This action can only be performed on `EPMPerformSignoffTask`s and must be performed by an assigned reviewer. Use Get User Actionable Signoffs to get available signoffs for the current user.
 
-#### Wokflow Tasks Reject
+#### Workflow Tasks Reject
 
 Records rejection by a reviewer on an `EPMPerformSignoffTask`. Provide the task, the `Signoff` to reject, and optionally a reason for rejection. The workflow behavior (block, return to previous step, etc.) depends on the template configuration. The `Signoff`'s `fnd0Status` becomes "Rejected". This action can only be performed on `EPMPerformSignoffTask`s and must be performed by the assigned reviewer. Use Get User Actionable Signoffs to get available signoffs for the current user.
 
-#### Wokflow Signoff Replace Reviewer
+#### Workflow Signoff Replace Reviewer
 
 Changes an existing reviewer in a sign-off workflow when you need to substitute one reviewer for another. Provide the `Signoff` to replace and specify a new reviewer (either a `GroupMember` or `ResourcePool`). The action updates the `Signoff`'s `group_member` or `resource_pool` association with the new reviewer, leaving the workflow structure intact while changing who performs the review.
 
