@@ -32,37 +32,37 @@ The TcConnector does not provide dedicated retrieval actions or TcConnector enti
 
 **`ItemRevision` Actions:** Submit Item Revision
 
-**Query Actions:** Retrieve Workflow Tasks to Perform for Inbox, Retrieve Workflow Tasks to Track for Inbox, Get My Task Inbox, Get Inbox List for Current User, Get All Tasks for Workflow Job, Get Workflow Job Status, Get Workflow Task Status, Get Signoff Profiles, Get User Actionable Signoffs, Get Workflow Template, Get Workflow Template Assigned, Get All Workflow Templates
+**Query Actions:** Retrieve Workflow Tasks to Perform for Inbox, Retrieve Workflow Tasks to Track for Inbox, Get My Task Inbox, Get Inbox List for Current User, Get All Tasks for Workflow Process, Get Parent Process, Get Signoff Profiles, Get User Actionable Signoffs, Get Workflow Template, Get Workflow Template Assigned, Get All Workflow Templates
 
 ## Workflow Actions
 
 ### Workflow Template Administration
 
-#### Get All Workflow Templates
+#### Workflow Templates Get All
 
 Retrieves all available workflow templates, or templates applicable to a specific target object. By default, only returns templates with availability set to 'online'. Set `IncludeUnderConstruction` to `true` to include templates marked as 'under construction. Optionally provide a `TargetModelObject` to filter results to only templates applicable to that object. Returns a list of `EPMTaskTemplate` objects - all templates when `TargetModelObject` is empty, or filtered templates when provided.
 
-#### Get Workflow Template
+#### Workflow Template Get By Name
 
 Retrieves a specific workflow template by name. Provide the workflow template name and the action returns the `EPMTaskTemplate` object with the specified name. This action throws an error if the template cannot be found.
 
-#### Get Workflow Template Assigned
+#### Workflow Template Get Assigned
 
 Retrieves the workflow template assigned for a specific target object. Provide the `TargetModelObject` to get the assigned template for, and the action returns the `EPMTaskTemplate` assigned to that object.
 
-#### Submit Item Revision Action
+#### Workflow Submit Item Revision
 
 Initiates a workflow on a specific `ItemRevision`. Provide the revision to submit, the workflow template name (use `EPMTaskTemplate.task_template` attribute), a name and description for the workflow process, and optionally a list of additional `ModelObject`s to attach as references. The action creates a new workflow process with tasks assigned according to the template, returning the root `EPMTask` of the initiated workflow.
 
 ### Retrieve User Tasks
 
-#### Get My Task Inbox
+#### Task Inboxes Get My Task for Current Teamcenter User
 
 Retrieves the `TaskInbox` for the current Teamcenter user. It does not populate the associated `EPMTask`s; use the Retrieve Workflow Tasks actions to populate tasks after obtaining the inbox.
 
-#### Get Inbox List for Current User
+#### Task Inboxes Get for Current Teamcenter User
 
-Retrieves the inboxes available to the current Teamcenter user, including subscribed inboxes. A subscribed inbox is not the same as a team inbox.
+Retrieves the subscribed inboxes of the current Teamcenter user. A subscribed inbox is not the same as a team inbox.
 
 #### Retrieve Workflow Tasks to Perform for Inbox
 
@@ -72,63 +72,59 @@ Retrieves all workflow tasks assigned to the current logged-in Teamcenter user. 
 
 Retrieves all workflow tasks tracked by the current logged-in Teamcenter user. These are tasks the user has already reviewed or is monitoring. Provide a `TaskInbox` object and the action will populate it with tracked tasks, returning a list of `EPMTask` objects.
 
-#### Get All Tasks for Workflow Job
+#### Workflow Process Get All Tasks
 
 Retrieves the tasks that belong to the specified `EPMJob`.
 
-#### Get Workflow Job Status
+#### Workflow Task Get Parent Process
 
-Retrieves the status of the specified `EPMJob`.
-
-#### Get Workflow Task Status
-
-Retrieves the status of the specified `EPMTask`.
+Retrieves the workflow process (`EPMJob`) associated with an `EPMTask`. Provide the task to get the process that contains it.
 
 ### User Task Actions
 
-#### Suspend Action
+#### Wokflow Tasks Suspend Action
 
 Temporarily pauses a workflow task. Useful when waiting on external dependencies or requiring additional information. Provide the `EPMTask` to suspend and optionally a reason for suspension. The task state becomes "Suspended" and no progress can be made until resumed. This action returns an error if the task is already suspended.
 
-#### Resume Action
+#### Wokflow Tasks Resume Action
 
 Continues work on a previously suspended task. Provide the suspended `EPMTask` to resume and optionally a reason for resuming. This action returns an error if the task is not suspended. Note that Resume actions do not appear in Process History.
 
-#### Complete Action
+#### Wokflow Tasks Complete Action
 
 Finishes a workflow task that doesn't require Approve/Reject decisions. Common for informational tasks or simple acknowledgments. Provide the `EPMTask` to complete and optionally completion notes. The task's `fnd0Status` becomes "Completed" and the workflow advances.
 
-#### Complete with Custom Outcome Action
+#### Wokflow Tasks Complete with Task Result
 
 Completes a task that has multiple predefined outcome options (e.g., "Approve", "Investigate", "Rework"). Provide the `EPMTask` to complete, a `TaskResult` decision outcome value, and optionally completion notes. The `TaskResult` determines which workflow path to follow next and must match one of the expected decision values defined in the workflow template. The task's `fnd0Status` becomes "Completed", `task_result` is set to the `TaskResult` value, and the workflow proceeds along the path corresponding to this decision. Valid `TaskResult` values are defined in the workflow template structure.
 
-#### Abort Action
+#### Wokflow Tasks Abort Action
 
 Cancels an entire workflow process when it's no longer needed. Provide the `EPMTask` to abort and a required comment explaining the reason. The task's `fnd0Status` becomes "Aborted" and the workflow terminates. This action cannot be undone, so use it only when you're certain the workflow should be cancelled.
 
 ### Ownership Actions
 
-#### Reassign Action
+#### Wokflow Tasks Reassign Action
 
 Transfers task ownership to a different user or resource pool. Provide the `EPMTask` to reassign, the new owner (either a `User` or `ResourcePool`), and optionally a reason for reassignment. The `fnd0Assignee` relation is updated to the new owner.
 
-#### Claim Action
+#### Wokflow Tasks Claim Action
 
 Claims a signoff assigned to a resource pool for the current user. Provide the EPMTask and Signoff to claim. The action clears the Signoff’s resource_pool relation and assigns it to the current user’s GroupMember. Use Get User Actionable Signoffs to retrieve signoffs the current user can claim.
 
 ### Review Actions
 
-#### Get Signoff Profiles
+#### Workflow Signoff Task Get Signoff Profiles
 
 Retrieves signoff profiles available for an `EPMSelectSignoffTask`. The profiles define reviewer eligibility rules, such as group and role and whether subgroups are allowed. Provide an `EPMTask` (must be an `EPMSelectSignoffTask`) and the action returns a list of `EPMSignoffProfile` objects. This action throws an error if the provided task is not an `EPMSelectSignoffTask`.
 
-#### Assign Reviewer Action
+#### Workflow Taks Add Reviewer
 
 Adds a reviewer to an `EPMSelectSignoffTask`. Provide the task, the reviewer (`GroupMember` or `ResourcePool`), an `EPMSignoffProfile` that defines reviewer eligibility, and a `SignoffRequired` value that controls whether this signoff is required. The action creates a new `Signoff` and links it to the `EPMTask` via the `Fnd0EPMSignoff` relation. The reviewer must satisfy the profile's rules. This action throws an error if the provided task is not an `EPMSelectSignoffTask`.
 
-#### Add Additional Reviewer Action
+#### Workflow Task Add Additional Reviewer
 
-Adds a reviewer to an `EPMSelectSignoffTask` that already has reviewers assigned. Provide the task, the reviewer to add (`GroupMember` or `ResourcePool`), and a `SignoffRequired` value that controls whether this signoff is required. The action creates a new `Signoff` and links it to the `EPMTask` via the `Fnd0EPMSignoff` relation. This action throws an error if the provided task is not an `EPMSelectSignoffTask`.
+Adds a reviewer to an `EPMSelectSignoffTask`. Provide the task, the reviewer to add (`GroupMember` or `ResourcePool`), and a `SignoffRequired` value that controls whether this signoff is required. The action creates a new `Signoff` and links it to the `EPMTask` via the `Fnd0EPMSignoff` relation. This action throws an error if the provided task is not an `EPMSelectSignoffTask`.
 
 **`SignoffRequired` values for Assign Reviewer and Add Additional Reviewer:**
 
@@ -136,19 +132,19 @@ Adds a reviewer to an `EPMSelectSignoffTask` that already has reviewers assigned
 - `Required Modifiable`: Signoff decision required even if quorum is met; can be changed back to "Optional"
 - `Required Unmodifiable`: Signoff decision required even if quorum is met; cannot be changed
 
-#### Get User Actionable Signoffs
+#### Workflow Task Get User Actionable Signoffs
 
 Retrieves the signoffs the current user can act on for an `EPMTask`. Use the returned signoffs with Claim, Approve, or Reject as appropriate.
 
-#### Approve Action
+#### Wokflow Tasks Approve
 
 Records approval by a reviewer on an `EPMPerformSignoffTask`. Provide the task, the `Signoff` to approve, and optionally approval comments. When all required reviewers approve, the workflow advances. The `Signoff`'s `fnd0Status` becomes "Approved". This action can only be performed on `EPMPerformSignoffTask`s and must be performed by an assigned reviewer. Use Get User Actionable Signoffs to get available signoffs for the current user.
 
-#### Reject Action
+#### Wokflow Tasks Reject
 
 Records rejection by a reviewer on an `EPMPerformSignoffTask`. Provide the task, the `Signoff` to reject, and optionally a reason for rejection. The workflow behavior (block, return to previous step, etc.) depends on the template configuration. The `Signoff`'s `fnd0Status` becomes "Rejected". This action can only be performed on `EPMPerformSignoffTask`s and must be performed by the assigned reviewer. Use Get User Actionable Signoffs to get available signoffs for the current user.
 
-#### Replace Reviewer Action
+#### Wokflow Signoff Replace Reviewer
 
 Changes an existing reviewer in a sign-off workflow when you need to substitute one reviewer for another. Provide the `Signoff` to replace and specify a new reviewer (either a `GroupMember` or `ResourcePool`). The action updates the `Signoff`'s `group_member` or `resource_pool` association with the new reviewer, leaving the workflow structure intact while changing who performs the review.
 
@@ -156,8 +152,7 @@ Changes an existing reviewer in a sign-off workflow when you need to substitute 
 
 ### Error Handling
 
-- Check ServiceResponse for partial errors after each action
-- Most actions return errors when prerequisites aren't met or when performed in invalid states
+Most actions return errors when prerequisites aren't met or when performed in invalid states or when the ServiceResponse from Teamcenter contains partial errors
 
 ### Best Practices
 
