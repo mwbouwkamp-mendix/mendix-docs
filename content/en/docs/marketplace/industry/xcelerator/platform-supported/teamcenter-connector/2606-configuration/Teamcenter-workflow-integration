@@ -13,7 +13,7 @@ The TcConnector enables Mendix to interact with Teamcenter workflows, allowing d
 
 This makes it possible to treat Teamcenter workflows as one component in broader, cross-system business processes.
 
-### Workflow Concepts
+### Teamcenter Workflow Concepts
 
 - **`EPMJob`**: A running workflow process created from a workflow template.
 - **`EPMTask`**: A task or step within an `EPMJob`. Tasks can be assigned, tracked, and completed; some tasks require reviewer signoffs.
@@ -82,15 +82,15 @@ Retrieves the workflow process (`EPMJob`) associated with an `EPMTask`. Provide 
 
 ### User Task Actions
 
-#### Workflow Tasks Suspend Action
+#### Workflow Tasks Suspend
 
 Temporarily pauses a workflow task. Useful when waiting on external dependencies or requiring additional information. Provide the `EPMTask` to suspend and optionally a reason for suspension. The task state becomes "Suspended" and no progress can be made until resumed. This action throws an error if the task is already suspended.
 
-#### Workflow Tasks Resume Action
+#### Workflow Tasks Resume
 
 Continues work on a previously suspended task. Provide the suspended `EPMTask` to resume and optionally a reason for resuming. This action throws an error if the task is not suspended.
 
-#### Workflow Tasks Complete Action
+#### Workflow Tasks Complete
 
 Finishes a workflow task that doesn't require Approve/Reject decisions. Common for informational tasks or simple acknowledgments. Provide the `EPMTask` to complete and optionally completion notes. The task's `fnd0Status` becomes "Completed" and the workflow advances.
 
@@ -98,17 +98,17 @@ Finishes a workflow task that doesn't require Approve/Reject decisions. Common f
 
 Completes a task that has multiple predefined outcome options (e.g., "Approve", "Investigate", "Rework"). Provide the `EPMTask` to complete, a `TaskResult` decision outcome value, and optionally completion notes. The `TaskResult` determines which workflow path to follow next and must match one of the expected decision values defined in the workflow template. The task's `fnd0Status` becomes "Completed", `task_result` is set to the `TaskResult` value, and the workflow proceeds along the path corresponding to this decision. Valid `TaskResult` values are defined in the workflow template structure.
 
-#### Workflow Tasks Abort Action
+#### Workflow Tasks Abort
 
 Cancels an entire workflow process when it's no longer needed. Provide the `EPMTask` to abort and a required comment explaining the reason. The task's `fnd0Status` becomes "Aborted" and the workflow terminates. This action cannot be undone, so use it only when you're certain the workflow should be cancelled.
 
 ### Ownership Actions
 
-#### Workflow Tasks Reassign Action
+#### Workflow Tasks Reassign
 
 Transfers task ownership to a different user or resource pool. Provide the `EPMTask` to reassign, the new owner (either a `User` or `ResourcePool`), and optionally a reason for reassignment. The `fnd0Assignee` relation is updated to the new owner.
 
-#### Workflow Tasks Claim Action
+#### Workflow Tasks Claim
 
 Claims a signoff assigned to a resource pool for the current user. Provide the EPMTask and Signoff to claim. The action clears the Signoff’s resource_pool relation and assigns it to the current user’s GroupMember. Use Get User Actionable Signoffs to retrieve signoffs the current user can claim.
 
